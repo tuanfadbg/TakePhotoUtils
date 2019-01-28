@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">TakePhotoUtils</string>
+    <string name="authority">com.tuanfadbg.takephotoutilsdemo.fileprovider</string>
+</resources>
