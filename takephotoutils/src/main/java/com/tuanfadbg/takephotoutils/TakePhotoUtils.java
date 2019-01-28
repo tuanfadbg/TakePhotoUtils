@@ -53,16 +53,26 @@ public class TakePhotoUtils {
         this.authority = authority;
     }
 
-    public TakePhotoUtils showDialogSelectImage() {
+    public TakePhotoUtils showDialogSelectImage(String cameraText, String galleryText, String cancelText) {
         AlertDialog.Builder builderSingle = new AlertDialog.Builder(activity);
-        LayoutInflater inflater = activity.getLayoutInflater();
 
         final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(activity, android.R.layout.select_dialog_singlechoice);
-        arrayAdapter.add(activity.getString(R.string.camera));
-        arrayAdapter.add(activity.getString(R.string.gallery));
 
-        builderSingle.setNegativeButton(activity.getString(R.string.cancel), (dialog, which) -> dialog.dismiss());
+        if (cameraText == null || cameraText.equals(""))
+            cameraText = activity.getString(R.string.camera);
 
+        if (galleryText == null || galleryText.equals("")) {
+            galleryText = activity.getString(R.string.gallery);
+        }
+
+        if (cancelText == null || cancelText.equals("")) {
+            cancelText = activity.getString(R.string.cancel);
+        }
+
+        arrayAdapter.add(cameraText);
+        arrayAdapter.add(galleryText);
+
+        builderSingle.setNegativeButton(cancelText, (dialog, which) -> dialog.dismiss());
         builderSingle.setAdapter(arrayAdapter, (dialog, which) -> {
             if (which == 0) {
                 checkPermisstionAndstartIntentTakePhoto();
@@ -74,18 +84,46 @@ public class TakePhotoUtils {
         return this;
     }
 
-    public void setListener(TakePhotoCallback takePhotoCallback) {
-        this.takePhotoCallback = takePhotoCallback;
-    }
-
-    private TakePhotoUtils getImageFromGallery() {
+    public TakePhotoUtils getImageFromGallery() {
         checkPermisstionAndBrowserImage();
         return this;
     }
 
-    private TakePhotoUtils takePhoto() {
+    public TakePhotoUtils takePhoto() {
         checkPermisstionAndstartIntentTakePhoto();
         return this;
+    }
+
+    public TakePhotoUtils toPortrait() {
+        isPortrait = true;
+        isHasOptions = true;
+        return this;
+    }
+
+    public TakePhotoUtils resize(int width, int height) {
+        this.resizeWidth = width;
+        this.resizeHeight = height;
+        isHasOptions = true;
+        return this;
+    }
+
+    public TakePhotoUtils resizeToMaxSide(int maxSide) {
+        this.maxSide = maxSide;
+        isHasOptions = true;
+        return this;
+    }
+
+    public TakePhotoUtils quality(int quality) {
+        if (quality < 0 || quality > 100)
+            this.quality = 100;
+        else
+            this.quality = quality;
+        isHasOptions = true;
+        return this;
+    }
+
+    public void setListener(TakePhotoCallback takePhotoCallback) {
+        this.takePhotoCallback = takePhotoCallback;
     }
 
     private void checkPermisstionAndBrowserImage() {
@@ -361,34 +399,6 @@ public class TakePhotoUtils {
             imageWidth = newImageWidth;
             resultBitmap = Bitmap.createScaledBitmap(resultBitmap, imageWidth, imageHeight, true);
         }
-    }
-
-    public TakePhotoUtils toPortrait() {
-        isPortrait = true;
-        isHasOptions = true;
-        return this;
-    }
-
-    public TakePhotoUtils resize(int width, int height) {
-        this.resizeWidth = width;
-        this.resizeHeight = height;
-        isHasOptions = true;
-        return this;
-    }
-
-    public TakePhotoUtils resizeToMaxSide(int maxSide) {
-        this.maxSide = maxSide;
-        isHasOptions = true;
-        return this;
-    }
-
-    public TakePhotoUtils quanlity(int quanlity) {
-        if (quanlity < 0 || quanlity > 100)
-            this.quality = 100;
-        else
-            this.quality = quanlity;
-        isHasOptions = true;
-        return this;
     }
 
     private void removeAllOptions() {
