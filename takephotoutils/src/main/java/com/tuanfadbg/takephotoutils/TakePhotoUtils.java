@@ -326,7 +326,10 @@ public class TakePhotoUtils {
 
 
             }
-            getExactSizeImage();
+            if (isCamera) {
+                getExactSizeImage();
+            }
+
             if (takePhotoCallback != null) {
                 takePhotoCallback.onSuccess(resultImagePath, imageWidth, imageHeight);
             }
