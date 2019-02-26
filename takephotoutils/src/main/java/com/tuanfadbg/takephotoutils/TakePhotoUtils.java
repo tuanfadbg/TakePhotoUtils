@@ -349,7 +349,7 @@ public class TakePhotoUtils {
     private void getExactSizeImage() {
         ExifInterface exif = null;
         try {
-            exif = new ExifInterface(mCurrentPhotoPath);
+            exif = new ExifInterface(resultImagePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
