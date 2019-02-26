@@ -16,7 +16,6 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
-import android.view.LayoutInflater;
 import android.widget.ArrayAdapter;
 
 import java.io.File;
@@ -288,8 +287,6 @@ public class TakePhotoUtils {
                     return;
                 }
 
-                rotateImage();
-
                 if (maxSide != 0) {
                     resizeBitmapToMaxSide();
                 } else if (resizeWidth != 0 && resizeHeight != 0) {
@@ -326,9 +323,9 @@ public class TakePhotoUtils {
 
 
             }
-            if (isCamera) {
-                getExactSizeImage();
-            }
+//            if (isCamera) {
+            getExactSizeImage();
+//            }
 
             if (takePhotoCallback != null) {
                 takePhotoCallback.onSuccess(resultImagePath, imageWidth, imageHeight);
@@ -340,6 +337,15 @@ public class TakePhotoUtils {
         }
     }
 
+    private void decodeFileAndGetInfomation() {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(resultImagePath, options);
+        resultBitmap = BitmapFactory.decodeFile(resultImagePath);
+        imageHeight = options.outHeight;
+        imageWidth = options.outWidth;
+    }
+
     private void getExactSizeImage() {
         ExifInterface exif = null;
         try {
@@ -349,47 +355,16 @@ public class TakePhotoUtils {
         }
         String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
         int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
-        int rotationAngle = 0;
         if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
-            rotationAngle = 90;
             int temp = imageWidth;
             imageWidth = imageHeight;
             imageHeight = temp;
         }
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
         if (orientation == ExifInterface.ORIENTATION_ROTATE_270) {
             int temp = imageWidth;
             imageWidth = imageHeight;
             imageHeight = temp;
         }
-    }
-
-    private void rotateImage() {
-        ExifInterface exif = null;
-        try {
-            exif = new ExifInterface(mCurrentPhotoPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-        int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
-        int rotationAngle = 0;
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
-        // Rotate Bitmap
-        Matrix matrix = new Matrix();
-        matrix.setRotate(rotationAngle, (float) imageWidth / 2, (float) imageHeight / 2);
-        resultBitmap = Bitmap.createBitmap(BitmapFactory.decodeFile(mCurrentPhotoPath), 0, 0, imageWidth, imageHeight, matrix, true);
-    }
-
-    private void decodeFileAndGetInfomation() {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(resultImagePath, options);
-        resultBitmap = BitmapFactory.decodeFile(resultImagePath);
-        imageHeight = options.outHeight;
-        imageWidth = options.outWidth;
     }
 
     private void removeOldFile() {
