@@ -8,14 +8,14 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.ExifInterface;
+import androidx.exifinterface.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import android.widget.ArrayAdapter;
 
 import java.io.File;
@@ -323,9 +323,7 @@ public class TakePhotoUtils {
 
 
             }
-//            if (isCamera) {
             getExactSizeImage();
-//            }
 
             if (takePhotoCallback != null) {
                 takePhotoCallback.onSuccess(resultImagePath, imageWidth, imageHeight);
@@ -353,18 +351,23 @@ public class TakePhotoUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-        int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
-            int temp = imageWidth;
-            imageWidth = imageHeight;
-            imageHeight = temp;
+        try {
+            String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+            int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
+            if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
+                int temp = imageWidth;
+                imageWidth = imageHeight;
+                imageHeight = temp;
+            }
+            if (orientation == ExifInterface.ORIENTATION_ROTATE_270) {
+                int temp = imageWidth;
+                imageWidth = imageHeight;
+                imageHeight = temp;
+            }
+        } catch (Exception ignored) {
+
         }
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_270) {
-            int temp = imageWidth;
-            imageWidth = imageHeight;
-            imageHeight = temp;
-        }
+
     }
 
     private void removeOldFile() {
@@ -382,21 +385,26 @@ public class TakePhotoUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-        int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
-        int rotationAngle = 0;
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
-        if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
+        try {
+            String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+            int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
+            int rotationAngle = 0;
+            if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
+            if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
+            if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
 
-        // Rotate Bitmap
-        Matrix matrix = new Matrix();
-        matrix.setRotate(rotationAngle, (float) imageWidth / 2, (float) imageHeight / 2);
+            // Rotate Bitmap
+            Matrix matrix = new Matrix();
+            matrix.setRotate(rotationAngle, (float) imageWidth / 2, (float) imageHeight / 2);
 
-        resultBitmap = Bitmap.createBitmap(resultBitmap, 0, 0, imageWidth, imageHeight, matrix, true);
-        int temp = imageHeight;
-        imageHeight = imageWidth;
-        imageWidth = temp;
+            resultBitmap = Bitmap.createBitmap(resultBitmap, 0, 0, imageWidth, imageHeight, matrix, true);
+            int temp = imageHeight;
+            imageHeight = imageWidth;
+            imageWidth = temp;
+        } catch (Exception ignored) {
+
+        }
+
     }
 
     private void resizeImageToFixSize() {
