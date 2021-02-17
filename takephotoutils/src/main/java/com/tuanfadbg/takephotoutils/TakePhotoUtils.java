@@ -348,10 +348,6 @@ public class TakePhotoUtils {
         ExifInterface exif = null;
         try {
             exif = new ExifInterface(resultImagePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
             String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
             int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
             if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
@@ -365,7 +361,8 @@ public class TakePhotoUtils {
                 imageHeight = temp;
             }
         } catch (Exception ignored) {
-
+            imageWidth = 0;
+            imageHeight = 0;
         }
 
     }
