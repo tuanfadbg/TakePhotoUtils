@@ -3,26 +3,36 @@ package com.tuanfadbg.takephotoutils;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+
 import androidx.exifinterface.media.ExifInterface;
+
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+
+import android.text.TextUtils;
 import android.widget.ArrayAdapter;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -35,17 +45,19 @@ public class TakePhotoUtils {
     private static final int CAMERA_REQUEST_CODE = 112;
     private static final int WRITE_EXTERNAL_REQUEST_CODE = 113;
     private boolean isCamera;
-    private String authority;
+    private final String authority;
     private TakePhotoCallback takePhotoCallback;
 
     private boolean isPortrait = false;
     private int resizeWidth = 0, resizeHeight = 0, maxSide = 0, quality = 100;
     private boolean isHasOptions = false;
+    private boolean multipleImage = false;
 
     private Bitmap resultBitmap = null;
     private int imageWidth, imageHeight;
 
     private String resultImagePath = "";
+    private long lastModified = 0;
 
     public TakePhotoUtils(Activity activity, String authority) {
         this.activity = activity;
@@ -96,6 +108,11 @@ public class TakePhotoUtils {
     public TakePhotoUtils toPortrait() {
         isPortrait = true;
         isHasOptions = true;
+        return this;
+    }
+
+    public TakePhotoUtils selectMultiple() {
+        multipleImage = true;
         return this;
     }
 
@@ -263,16 +280,62 @@ public class TakePhotoUtils {
         isCamera = false;
         Intent pickPhoto = new Intent(Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickPhoto.setType("image/*");
+        if (multipleImage && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            pickPhoto.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
         activity.startActivityForResult(pickPhoto, RESULT_LOAD_IMG);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK && requestCode == RESULT_LOAD_IMG) {
-
+            Uri selectedImage = null;
             if (isCamera) {
                 setResultImagePath(mCurrentPhotoPath, null);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && data.getClipData() != null) {
+                ClipData mClipData = data.getClipData();
+                ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
+                String imageEncoded;
+                List<String> imagesEncodedList = new ArrayList<>();
+                List<Long> lastModifieds = new ArrayList<>();
+                for (int i = 0; i < mClipData.getItemCount(); i++) {
+                    try {
+                        ClipData.Item item = mClipData.getItemAt(i);
+                        Uri uri = item.getUri();
+                        mArrayUri.add(uri);
+                        String[] filePathColumn = {MediaStore.Images.Media.DATA, DocumentsContract.Document.COLUMN_LAST_MODIFIED};
+                        // Get the cursor
+                        Cursor cursor = activity.getContentResolver().query(uri, filePathColumn, null, null, null);
+                        // Move to first row
+                        cursor.moveToFirst();
+
+                        int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                        int columnIndex1 = cursor.getColumnIndex(filePathColumn[1]);
+                        imageEncoded = cursor.getString(columnIndex);
+                        imagesEncodedList.add(imageEncoded);
+
+                        String lastModifiedString = cursor.getString(columnIndex1);
+                        lastModifieds.add(TextUtils.isEmpty(lastModifiedString) ? 0 : Long.valueOf(lastModifiedString));
+                        cursor.close();
+                    } catch (Exception e) {
+                        lastModifieds.add(0L);
+                    }
+
+                }
+                takePhotoCallback.onMultipleSuccess(imagesEncodedList, mArrayUri, lastModifieds);
+                return;
             } else if (data.getData() != null) {
-                Uri selectedImage = data.getData();
+                selectedImage = data.getData();
+                try {
+                    String[] filePathColumn = {DocumentsContract.Document.COLUMN_LAST_MODIFIED};
+                    Cursor cursor = activity.getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+                    cursor.moveToFirst();
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String lastModifiedString = cursor.getString(columnIndex);
+                    lastModified = TextUtils.isEmpty(lastModifiedString) ? 0 : Long.parseLong(lastModifiedString);
+                } catch (Exception e) {
+                    lastModified = 0;
+                }
                 if (selectedImage != null) {
                     setResultImagePath(null, selectedImage);
                 }
@@ -327,6 +390,7 @@ public class TakePhotoUtils {
 
             if (takePhotoCallback != null) {
                 takePhotoCallback.onSuccess(resultImagePath, imageWidth, imageHeight);
+                takePhotoCallback.onSuccess(resultBitmap, imageWidth, imageHeight, selectedImage, lastModified);
             }
 
             if (isHasOptions) {
@@ -379,27 +443,29 @@ public class TakePhotoUtils {
         ExifInterface exif = null;
         try {
             exif = new ExifInterface(resultImagePath);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        try {
-            String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-            int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
-            int rotationAngle = 0;
-            if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
-            if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
-            if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
+        if (exif != null) {
+            try {
+                String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+                int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
+                int rotationAngle = 0;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
 
-            // Rotate Bitmap
-            Matrix matrix = new Matrix();
-            matrix.setRotate(rotationAngle, (float) imageWidth / 2, (float) imageHeight / 2);
+                // Rotate Bitmap
+                Matrix matrix = new Matrix();
+                matrix.setRotate(rotationAngle, (float) imageWidth / 2, (float) imageHeight / 2);
 
-            resultBitmap = Bitmap.createBitmap(resultBitmap, 0, 0, imageWidth, imageHeight, matrix, true);
-            int temp = imageHeight;
-            imageHeight = imageWidth;
-            imageWidth = temp;
-        } catch (Exception ignored) {
+                resultBitmap = Bitmap.createBitmap(resultBitmap, 0, 0, imageWidth, imageHeight, matrix, true);
+                int temp = imageHeight;
+                imageHeight = imageWidth;
+                imageWidth = temp;
+            } catch (Exception ignored) {
 
+            }
         }
 
     }

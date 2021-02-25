@@ -4,14 +4,22 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import com.tuanfadbg.takephotoutils.TakePhotoCallback;
 import com.tuanfadbg.takephotoutils.TakePhotoUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = MainActivity.class.getSimpleName();
     TakePhotoUtils takePhotoUtils;
 
     @Override
@@ -27,19 +35,27 @@ public class MainActivity extends AppCompatActivity {
 
     public void showDialog() {
         takePhotoUtils.showDialogSelectImage(null, null, null)
-                .toPortrait()
-                .resize(200, 200)
-                .resizeToMaxSide(100)
-                .quality(100)
+
                 .setListener(new TakePhotoCallback() {
                     @Override
-                    public void onSuccess(String path, int width, int height) {
+                    public void onMultipleSuccess(List<String> imagesEncodedList, ArrayList<Uri> mArrayUri, List<Long> lastModifieds) {
+                        Log.e(TAG, "onMultipleSuccess: " + imagesEncodedList.get(0) + " "
+                                + mArrayUri.get(0).getPath() + " " + lastModifieds.get(0) );
+                    }
 
+                    @Override
+                    public void onSuccess(Bitmap bitmap, int width, int height, Uri sourceUri, long lastModified) {
+                        Log.e(TAG, "onSuccess 1: " + width + " " + height + " " + sourceUri.getPath() + " " + lastModified);
+                    }
+
+                    @Override
+                    public void onSuccess(String path, int width, int height) {
+                        Log.e(TAG, "onSuccess 2: " + width + " " + height + " " + path);
                     }
 
                     @Override
                     public void onFail() {
-
+                        Log.e(TAG, "onFail: " );
                     }
                 });
 
