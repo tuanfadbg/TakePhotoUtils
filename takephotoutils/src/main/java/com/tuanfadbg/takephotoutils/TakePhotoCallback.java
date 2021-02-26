@@ -10,9 +10,9 @@ public interface TakePhotoCallback {
 
     void onMultipleSuccess(List<String> imagesEncodedList, ArrayList<Uri> mArrayUri, List<Long> lastModifieds);
 
-    void onSuccess(Bitmap bitmap, int width, int height, Uri sourceUri, long lastModified);
+    void onSuccess(String path, Bitmap bitmap, int width, int height, Uri sourceUri, long lastModified);
 
-    void onSuccess(String path, int width, int height);
+//    void onSuccess(String path, int width, int height);
 
     void onFail();
 }

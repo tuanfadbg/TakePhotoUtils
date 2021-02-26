@@ -289,7 +289,7 @@ public class TakePhotoUtils {
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK && requestCode == RESULT_LOAD_IMG) {
-            Uri selectedImage = null;
+            Uri imageUri = null;
             if (isCamera) {
                 setResultImagePath(mCurrentPhotoPath, null);
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && data.getClipData() != null) {
@@ -325,10 +325,10 @@ public class TakePhotoUtils {
                 takePhotoCallback.onMultipleSuccess(imagesEncodedList, mArrayUri, lastModifieds);
                 return;
             } else if (data.getData() != null) {
-                selectedImage = data.getData();
+                imageUri = data.getData();
                 try {
                     String[] filePathColumn = {DocumentsContract.Document.COLUMN_LAST_MODIFIED};
-                    Cursor cursor = activity.getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+                    Cursor cursor = activity.getContentResolver().query(imageUri, filePathColumn, null, null, null);
                     cursor.moveToFirst();
                     int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                     String lastModifiedString = cursor.getString(columnIndex);
@@ -336,8 +336,8 @@ public class TakePhotoUtils {
                 } catch (Exception e) {
                     lastModified = 0;
                 }
-                if (selectedImage != null) {
-                    setResultImagePath(null, selectedImage);
+                if (imageUri != null) {
+                    setResultImagePath(null, imageUri);
                 }
             }
 
@@ -389,8 +389,8 @@ public class TakePhotoUtils {
             getExactSizeImage();
 
             if (takePhotoCallback != null) {
-                takePhotoCallback.onSuccess(resultImagePath, imageWidth, imageHeight);
-                takePhotoCallback.onSuccess(resultBitmap, imageWidth, imageHeight, selectedImage, lastModified);
+//                takePhotoCallback.onSuccess(resultImagePath, imageWidth, imageHeight);
+                takePhotoCallback.onSuccess(resultImagePath, resultBitmap, imageWidth, imageHeight, imageUri, lastModified);
             }
 
             if (isHasOptions) {

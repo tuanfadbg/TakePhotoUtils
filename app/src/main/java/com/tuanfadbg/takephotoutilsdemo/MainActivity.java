@@ -1,6 +1,7 @@
 package com.tuanfadbg.takephotoutilsdemo;
 
 import android.content.Intent;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -40,22 +41,21 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onMultipleSuccess(List<String> imagesEncodedList, ArrayList<Uri> mArrayUri, List<Long> lastModifieds) {
                         Log.e(TAG, "onMultipleSuccess: " + imagesEncodedList.get(0) + " "
-                                + mArrayUri.get(0).getPath() + " " + lastModifieds.get(0) );
+                                + mArrayUri.get(0).getPath() + " " + lastModifieds.get(0));
                     }
 
                     @Override
-                    public void onSuccess(Bitmap bitmap, int width, int height, Uri sourceUri, long lastModified) {
-                        Log.e(TAG, "onSuccess 1: " + width + " " + height + " " + sourceUri.getPath() + " " + lastModified);
-                    }
-
-                    @Override
-                    public void onSuccess(String path, int width, int height) {
-                        Log.e(TAG, "onSuccess 2: " + width + " " + height + " " + path);
+                    public void onSuccess(String path, Bitmap bitmap, int width, int height, Uri sourceUri, long lastModified) {
+                        Log.e(TAG, "onSuccess path: " + path);
+                        if (sourceUri != null)
+                            Log.e(TAG, "onSuccess url: " + sourceUri.getPath());
+                        Log.e(TAG, "onSuccess bitmap != null : " + (bitmap != null));
+                        Log.e(TAG, "onSuccess 1: " + width + " " + height + " " + lastModified);
                     }
 
                     @Override
                     public void onFail() {
-                        Log.e(TAG, "onFail: " );
+                        Log.e(TAG, "onFail: ");
                     }
                 });
 
