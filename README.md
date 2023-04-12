@@ -33,7 +33,10 @@ Manifest.xml
 ```
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
+ <!-- Required only if your app needs to access images or photos
+         that other apps created. -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     
 <provider
     android:name="android.support.v4.content.FileProvider"
@@ -44,6 +47,29 @@ Manifest.xml
             android:name="android.support.FILE_PROVIDER_PATHS"
             android:resource="@xml/file_paths" />
 </provider>
+...
+	<queries>
+		<!-- Browser -->
+		<intent>
+		    <action android:name="android.intent.action.VIEW" />
+		    <data android:scheme="http" />
+		</intent>
+
+		<!-- Camera -->
+		<intent>
+		    <action android:name="android.media.action.IMAGE_CAPTURE" />
+		</intent>
+
+		<!-- Gallery -->
+		<intent>
+		    <action android:name="android.intent.action.GET_CONTENT" />
+		</intent>
+		<!-- Gallery -->
+		<intent>
+		    <action android:name="android.intent.action.PICK" />
+		</intent>
+    	</queries>
+</manifest>
 ```
 
 res/xml/file_paths.xml
@@ -130,8 +156,6 @@ res/xml/file_paths.xml
 ## Author
 
  *Tuan Nguyen* - Tuan FADBG.
- 
- Visit my website [tuanfadbg.com](https://tuanfadbg.com/ "Tuan FADBG").
 
 ## Versioning
 We use Jitpack for versioning. For the versions available, see the tags on this repository.
