@@ -1,5 +1,7 @@
 package com.tuanfadbg.takephotoutils;
 
+import static android.app.Activity.RESULT_OK;
+
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -10,21 +12,18 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-
-import androidx.exifinterface.media.ExifInterface;
-
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.text.TextUtils;
+import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
-
-import android.text.TextUtils;
-import android.widget.ArrayAdapter;
+import androidx.exifinterface.media.ExifInterface;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,8 +32,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import static android.app.Activity.RESULT_OK;
 
 public class TakePhotoUtils {
     private Activity activity;
@@ -169,7 +166,7 @@ public class TakePhotoUtils {
     }
 
     private boolean isWriteExternalPermissionGranted() {
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < 33) {
             if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     == PackageManager.PERMISSION_GRANTED) {
                 return true;
@@ -184,12 +181,22 @@ public class TakePhotoUtils {
 
     private boolean isReadExternalPermissionGranted() {
         if (Build.VERSION.SDK_INT >= 23) {
-            if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED) {
-                return true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_MEDIA_IMAGES)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    return true;
+                } else {
+                    activity.requestPermissions(new String[]{Manifest.permission.READ_MEDIA_IMAGES}, READ_EXTERNAL_REQUEST_CODE);
+                    return false;
+                }
             } else {
-                activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, READ_EXTERNAL_REQUEST_CODE);
-                return false;
+                if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    return true;
+                } else {
+                    activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, READ_EXTERNAL_REQUEST_CODE);
+                    return false;
+                }
             }
         } else { //permission is automatically granted on sdk<23 upon installation
             return true;
